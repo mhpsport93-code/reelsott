@@ -2,42 +2,43 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Reels OTT</title>
+<title>ReelsOTT</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{box-sizing:border-box;margin:0;padding:0}
+
 body{
-  background:linear-gradient(180deg,#0e0e0e,#121212);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  background:#0e0e0e;
   color:#fff;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+  min-height:100vh;
 }
 
-/* ===== HEADER ===== */
+/* ================= HEADER ================= */
 header{
-  position:sticky;
-  top:0;
-  z-index:20;
-  background:rgba(20,20,20,.85);
-  backdrop-filter:blur(10px);
-  padding:14px 16px;
   display:flex;
   align-items:center;
   gap:12px;
-  border-bottom:1px solid rgba(255,255,255,.06);
+  padding:14px 16px;
+  background:#111;
+  border-bottom:1px solid #222;
 }
+
 .logo{
-  font-size:20px;
   font-weight:800;
-  background:linear-gradient(90deg,#ff7adf,#7aa2ff);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+  font-size:18px;
+  white-space:nowrap;
 }
-.search{flex:1}
+
+.search{
+  flex:1;
+}
+
 .search input{
   width:100%;
-  padding:10px 12px;
-  border-radius:12px;
+  padding:10px 14px;
+  border-radius:999px;
   border:none;
   outline:none;
   background:#1c1c1c;
@@ -45,193 +46,150 @@ header{
   font-size:14px;
 }
 
-/* ===== GRID ===== */
+/* ================= GRID ================= */
 .grid{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
   gap:14px;
-  padding:16px;
+  padding:14px;
 }
+
 .card{
-  cursor:pointer;
-}
-.poster{
-  position:relative;
-  border-radius:16px;
+  background:#181818;
+  border-radius:14px;
   overflow:hidden;
-  background:#222;
+  cursor:pointer;
+  transition:.2s;
 }
-.poster img{
+
+.card:hover{
+  transform:scale(1.03);
+}
+
+.card img{
   width:100%;
-  aspect-ratio:2/3;
+  height:220px;
   object-fit:cover;
   display:block;
 }
-.poster::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(
-    180deg,
-    rgba(0,0,0,0) 55%,
-    rgba(0,0,0,.65) 100%
-  );
-}
-.card h4{
+
+.card h3{
   font-size:14px;
-  margin-top:8px;
-  line-height:1.35;
   font-weight:600;
-  color:#f2f2f2;
+  padding:8px 10px 10px;
+  line-height:1.3;
 }
 
-/* ===== NOTICE ===== */
-.notice{
-  padding:30px;
+/* ================= MESSAGE ================= */
+.msg{
   text-align:center;
-  color:#aaa;
+  opacity:.6;
+  padding:40px 16px;
   font-size:14px;
 }
 
-/* ===== FOOTER ===== */
+/* ================= FOOTER ================= */
 footer{
-  padding:18px 14px;
   text-align:center;
-  font-size:12px;
-  color:#888;
-  border-top:1px solid rgba(255,255,255,.06);
-}
-
-/* ===== REELS ===== */
-.reels{
-  position:fixed;
-  inset:0;
-  background:#000;
-  display:none;
-  overflow-y:auto;
-  scroll-snap-type:y mandatory;
-  z-index:99;
-}
-.reel{
-  height:100vh;
-  scroll-snap-align:start;
-}
-.reel video{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-.close{
-  position:fixed;
-  top:14px;
-  right:16px;
-  font-size:26px;
-  z-index:999;
-  cursor:pointer;
+  padding:14px;
+  font-size:13px;
+  color:#aaa;
+  border-top:1px solid #222;
 }
 </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
 <header>
-  <div class="logo">ReelsOTT</div>
+  <div class="logo">🎬 ReelsOTT</div>
   <div class="search">
-    <input id="searchInput" placeholder="Search shows…">
+    <input id="search" placeholder="Search reels...">
   </div>
 </header>
 
-<!-- GRID -->
 <div id="grid" class="grid"></div>
+<div id="msg" class="msg" style="display:none"></div>
 
-<!-- NOTICE -->
-<div id="notice" class="notice">Loading content…</div>
-
-<!-- FOOTER -->
 <footer>
-  © 2026 ReelsOTT • Powered by GitHub Pages
+  © 2026 ReelsOTT • GitHub Pages
 </footer>
 
-<!-- REELS VIEW -->
-<div class="reels" id="reels">
-  <div class="close" onclick="closeReels()">✕</div>
-  <div id="reelWrap"></div>
-</div>
-
 <script>
-let allPosts=[];
+/* ===== BASE PATH FIX (LOCAL + GITHUB PAGES) ===== */
+const BASE = location.pathname.includes('/reelsott/')
+  ? '/reelsott/'
+  : '/';
 
-/* LOAD POSTS SAFELY */
-fetch("posts/index.json")
-.then(r=>{
-  if(!r.ok) throw "index.json not found";
-  return r.json();
-})
-.then(slugs=>{
-  return Promise.all(
-    slugs.map(s =>
-      fetch("posts/"+s+".json").then(r=>{
-        if(!r.ok) throw s+" missing";
-        return r.json();
-      })
-    )
-  );
-})
-.then(data=>{
-  allPosts=data;
-  render(data);
-})
-.catch(err=>{
-  document.getElementById("notice").innerText =
-    "No posts available";
-  console.error(err);
-});
+const grid = document.getElementById('grid');
+const msg  = document.getElementById('msg');
+const searchInput = document.getElementById('search');
 
-/* RENDER GRID + REELS */
+let allPosts = [];
+
+/* ===== LOAD POSTS INDEX ===== */
+fetch(BASE + 'posts/index.json')
+  .then(r => {
+    if(!r.ok) throw 'index.json not found';
+    return r.json();
+  })
+  .then(slugs => {
+    if(!Array.isArray(slugs) || !slugs.length) {
+      throw 'empty index';
+    }
+
+    Promise.all(
+      slugs.map(slug =>
+        fetch(BASE + 'posts/' + slug + '.json')
+          .then(r => r.json())
+          .then(data => ({ slug, ...data }))
+      )
+    ).then(posts => {
+      allPosts = posts;
+      render(posts);
+    });
+  })
+  .catch(() => {
+    msg.style.display = 'block';
+    msg.innerText = 'No posts found or data error';
+  });
+
+/* ===== RENDER GRID ===== */
 function render(list){
-  const grid=document.getElementById("grid");
-  const reelWrap=document.getElementById("reelWrap");
-  const notice=document.getElementById("notice");
-  grid.innerHTML="";
-  reelWrap.innerHTML="";
-  notice.style.display="none";
+  grid.innerHTML = '';
+  msg.style.display = list.length ? 'none' : 'block';
 
-  list.forEach((p,i)=>{
-    grid.innerHTML+=`
-      <div class="card" onclick="openReels(${i})">
-        <div class="poster">
-          <img src="${p.poster}">
-        </div>
-        <h4>${p.title}</h4>
-      </div>
+  if(!list.length){
+    msg.innerText = 'No matching posts';
+    return;
+  }
+
+  list.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <img src="${p.poster}" loading="lazy">
+      <h3>${p.title}</h3>
     `;
-    reelWrap.innerHTML+=`
-      <div class="reel">
-        <video src="${p.video}" muted loop playsinline></video>
-      </div>
-    `;
+    card.onclick = () => {
+      alert(
+        'Reel click demo\\n\\nTitle: ' + p.title +
+        '\\n\\nNext step: yahan reel player open karenge'
+      );
+    };
+    grid.appendChild(card);
   });
 }
 
-/* SEARCH */
-document.getElementById("searchInput").oninput=function(){
-  const q=this.value.toLowerCase();
-  render(allPosts.filter(p =>
-    p.title.toLowerCase().includes(q)
-  ));
-};
-
-/* REELS CONTROLS */
-const reels=document.getElementById("reels");
-function openReels(i){
-  reels.style.display="block";
-  reels.scrollTo(0,i*innerHeight);
-}
-function closeReels(){
-  reels.style.display="none";
-  document.querySelectorAll("video").forEach(v=>v.pause());
-}
+/* ===== SEARCH ===== */
+searchInput.addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  render(
+    allPosts.filter(p =>
+      p.title.toLowerCase().includes(q)
+    )
+  );
+});
 </script>
 
 </body>
