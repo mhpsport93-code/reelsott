@@ -8,51 +8,84 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
-  background:#0e0e0e;
+  background:linear-gradient(180deg,#0e0e0e,#121212);
   color:#fff;
   font-family:system-ui,-apple-system,Segoe UI,Roboto;
 }
 
-/* HEADER */
+/* ===== HEADER ===== */
 header{
   position:sticky;
   top:0;
-  z-index:10;
-  background:#111;
-  padding:12px 14px;
+  z-index:20;
+  background:rgba(20,20,20,.85);
+  backdrop-filter:blur(10px);
+  padding:14px 16px;
   display:flex;
   align-items:center;
-  gap:10px;
-  border-bottom:1px solid #222;
+  gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
-.logo{font-weight:800;font-size:18px}
+.logo{
+  font-size:20px;
+  font-weight:800;
+  background:linear-gradient(90deg,#ff7adf,#7aa2ff);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
 .search{flex:1}
 .search input{
   width:100%;
-  padding:8px 10px;
-  border-radius:8px;
+  padding:10px 12px;
+  border-radius:12px;
   border:none;
   outline:none;
   background:#1c1c1c;
   color:#fff;
+  font-size:14px;
 }
 
-/* GRID */
+/* ===== GRID ===== */
 .grid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  padding:12px;
+  gap:14px;
+  padding:16px;
 }
-.card img{
+.card{
+  cursor:pointer;
+}
+.poster{
+  position:relative;
+  border-radius:16px;
+  overflow:hidden;
+  background:#222;
+}
+.poster img{
   width:100%;
   aspect-ratio:2/3;
   object-fit:cover;
-  border-radius:10px;
+  display:block;
 }
-.card h4{font-size:13px;margin-top:4px}
+.poster::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    180deg,
+    rgba(0,0,0,0) 55%,
+    rgba(0,0,0,.65) 100%
+  );
+}
+.card h4{
+  font-size:14px;
+  margin-top:8px;
+  line-height:1.35;
+  font-weight:600;
+  color:#f2f2f2;
+}
 
-/* EMPTY / ERROR */
+/* ===== NOTICE ===== */
 .notice{
   padding:30px;
   text-align:center;
@@ -60,16 +93,16 @@ header{
   font-size:14px;
 }
 
-/* FOOTER */
+/* ===== FOOTER ===== */
 footer{
-  padding:14px;
+  padding:18px 14px;
   text-align:center;
   font-size:12px;
-  color:#aaa;
-  border-top:1px solid #222;
+  color:#888;
+  border-top:1px solid rgba(255,255,255,.06);
 }
 
-/* REELS */
+/* ===== REELS ===== */
 .reels{
   position:fixed;
   inset:0;
@@ -79,43 +112,48 @@ footer{
   scroll-snap-type:y mandatory;
   z-index:99;
 }
-.reel{height:100vh;scroll-snap-align:start}
-.reel video{width:100%;height:100%;object-fit:cover}
+.reel{
+  height:100vh;
+  scroll-snap-align:start;
+}
+.reel video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
 .close{
   position:fixed;
-  top:12px;
-  right:14px;
+  top:14px;
+  right:16px;
   font-size:26px;
-  cursor:pointer;
   z-index:999;
+  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<!-- HEADER ALWAYS VISIBLE -->
+<!-- HEADER -->
 <header>
-  <div class="logo">🎬 ReelsOTT</div>
+  <div class="logo">ReelsOTT</div>
   <div class="search">
-    <input id="searchInput" placeholder="Search reels…">
+    <input id="searchInput" placeholder="Search shows…">
   </div>
 </header>
 
 <!-- GRID -->
 <div id="grid" class="grid"></div>
 
-<!-- MESSAGE -->
-<div id="notice" class="notice">
-  Loading posts…
-</div>
+<!-- NOTICE -->
+<div id="notice" class="notice">Loading content…</div>
 
-<!-- FOOTER ALWAYS VISIBLE -->
+<!-- FOOTER -->
 <footer>
-  © 2026 ReelsOTT • GitHub Pages
+  © 2026 ReelsOTT • Powered by GitHub Pages
 </footer>
 
-<!-- REELS -->
+<!-- REELS VIEW -->
 <div class="reels" id="reels">
   <div class="close" onclick="closeReels()">✕</div>
   <div id="reelWrap"></div>
@@ -124,7 +162,7 @@ footer{
 <script>
 let allPosts=[];
 
-/* LOAD POSTS SAFELY (NO BLANK) */
+/* LOAD POSTS SAFELY */
 fetch("posts/index.json")
 .then(r=>{
   if(!r.ok) throw "index.json not found";
@@ -146,11 +184,11 @@ fetch("posts/index.json")
 })
 .catch(err=>{
   document.getElementById("notice").innerText =
-    "No posts found or data error";
+    "No posts available";
   console.error(err);
 });
 
-/* RENDER */
+/* RENDER GRID + REELS */
 function render(list){
   const grid=document.getElementById("grid");
   const reelWrap=document.getElementById("reelWrap");
@@ -162,23 +200,29 @@ function render(list){
   list.forEach((p,i)=>{
     grid.innerHTML+=`
       <div class="card" onclick="openReels(${i})">
-        <img src="${p.poster}">
+        <div class="poster">
+          <img src="${p.poster}">
+        </div>
         <h4>${p.title}</h4>
-      </div>`;
+      </div>
+    `;
     reelWrap.innerHTML+=`
       <div class="reel">
         <video src="${p.video}" muted loop playsinline></video>
-      </div>`;
+      </div>
+    `;
   });
 }
 
 /* SEARCH */
 document.getElementById("searchInput").oninput=function(){
   const q=this.value.toLowerCase();
-  render(allPosts.filter(p=>p.title.toLowerCase().includes(q)));
+  render(allPosts.filter(p =>
+    p.title.toLowerCase().includes(q)
+  ));
 };
 
-/* REELS */
+/* REELS CONTROLS */
 const reels=document.getElementById("reels");
 function openReels(i){
   reels.style.display="block";
@@ -186,6 +230,7 @@ function openReels(i){
 }
 function closeReels(){
   reels.style.display="none";
+  document.querySelectorAll("video").forEach(v=>v.pause());
 }
 </script>
 
