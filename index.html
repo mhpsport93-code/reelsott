@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reels OTT</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#0e0e0e;
+  color:#fff;
+  font-family:system-ui;
+}
+
+/* ===== GRID ===== */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  padding:12px;
+}
+.card{
+  cursor:pointer;
+}
+.card img{
+  width:100%;
+  aspect-ratio:2/3;
+  object-fit:cover;
+  border-radius:10px;
+}
+.card h4{
+  font-size:13px;
+  margin-top:4px;
+  opacity:.9;
+}
+
+/* ===== REELS ===== */
+.reels{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:none;
+  overflow-y:auto;
+  scroll-snap-type:y mandatory;
+  z-index:9;
+}
+.reel{
+  height:100vh;
+  scroll-snap-align:start;
+}
+.reel video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+/* CLOSE */
+.close{
+  position:fixed;
+  top:12px;
+  right:14px;
+  font-size:26px;
+  z-index:99;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HOME GRID -->
+<div class="grid" id="grid"></div>
+
+<!-- REELS VIEW -->
+<div class="reels" id="reels">
+  <div class="close" onclick="closeReels()">✕</div>
+  <div id="reelWrap"></div>
+</div>
+
+<script>
+let posts=[];
+
+/* =========================
+   AUTO LOAD ALL POSTS
+   (index.html NEVER edit again)
+========================= */
+fetch("posts/index.json")
+.then(res=>res.json())
+.then(slugs=>{
+  return Promise.all(
+    slugs.map(s =>
+      fetch("posts/"+s+".json").then(r=>r.json())
+    )
+  );
+})
+.then(data=>{
+  posts=data;
+  render();
+});
+
+/* =========================
+   RENDER GRID + REELS
+========================= */
+function render(){
+  const grid=document.getElementById("grid");
+  const reelWrap=document.getElementById("reelWrap");
+
+  posts.forEach((p,i)=>{
+    grid.innerHTML+=`
+      <div class="card" onclick="openReels(${i})">
+        <img src="${p.poster}">
+        <h4>${p.title}</h4>
+      </div>
+    `;
+    reelWrap.innerHTML+=`
+      <div class="reel">
+        <video src="${p.video}" muted loop playsinline></video>
+      </div>
+    `;
+  });
+}
+
+/* =========================
+   REELS CONTROLS
+========================= */
+const reels=document.getElementById("reels");
+
+function openReels(i){
+  reels.style.display="block";
+  reels.scrollTo(0,i*innerHeight);
+  playVisible();
+}
+function closeReels(){
+  reels.style.display="none";
+  document.querySelectorAll("video").forEach(v=>v.pause());
+}
+function playVisible(){
+  document.querySelectorAll(".reel").forEach(r=>{
+    const v=r.querySelector("video");
+    const b=r.getBoundingClientRect();
+    (b.top>=0 && b.bottom<=innerHeight)
+      ? v.play()
+      : v.pause();
+  });
+}
+reels.addEventListener("scroll",playVisible);
+</script>
+
+</body>
+</html>
