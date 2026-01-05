@@ -13,7 +13,7 @@ body{
   font-family:system-ui,-apple-system,Segoe UI,Roboto;
 }
 
-/* ===== HEADER ===== */
+/* HEADER */
 header{
   position:sticky;
   top:0;
@@ -25,13 +25,8 @@ header{
   gap:10px;
   border-bottom:1px solid #222;
 }
-.logo{
-  font-weight:800;
-  font-size:18px;
-}
-.search{
-  flex:1;
-}
+.logo{font-weight:800;font-size:18px}
+.search{flex:1}
 .search input{
   width:100%;
   padding:8px 10px;
@@ -40,18 +35,14 @@ header{
   outline:none;
   background:#1c1c1c;
   color:#fff;
-  font-size:14px;
 }
 
-/* ===== GRID ===== */
+/* GRID */
 .grid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:10px;
   padding:12px;
-}
-.card{
-  cursor:pointer;
 }
 .card img{
   width:100%;
@@ -59,13 +50,26 @@ header{
   object-fit:cover;
   border-radius:10px;
 }
-.card h4{
-  font-size:13px;
-  margin-top:4px;
-  opacity:.9;
+.card h4{font-size:13px;margin-top:4px}
+
+/* EMPTY / ERROR */
+.notice{
+  padding:30px;
+  text-align:center;
+  color:#aaa;
+  font-size:14px;
 }
 
-/* ===== REELS ===== */
+/* FOOTER */
+footer{
+  padding:14px;
+  text-align:center;
+  font-size:12px;
+  color:#aaa;
+  border-top:1px solid #222;
+}
+
+/* REELS */
 .reels{
   position:fixed;
   inset:0;
@@ -75,141 +79,114 @@ header{
   scroll-snap-type:y mandatory;
   z-index:99;
 }
-.reel{
-  height:100vh;
-  scroll-snap-align:start;
-}
-.reel video{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
+.reel{height:100vh;scroll-snap-align:start}
+.reel video{width:100%;height:100%;object-fit:cover}
 .close{
   position:fixed;
   top:12px;
   right:14px;
   font-size:26px;
-  z-index:999;
   cursor:pointer;
-}
-
-/* ===== FOOTER ===== */
-footer{
-  padding:14px;
-  text-align:center;
-  font-size:12px;
-  color:#aaa;
-  border-top:1px solid #222;
+  z-index:999;
 }
 </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
+<!-- HEADER ALWAYS VISIBLE -->
 <header>
   <div class="logo">🎬 ReelsOTT</div>
   <div class="search">
-    <input type="text" id="searchInput" placeholder="Search reels...">
+    <input id="searchInput" placeholder="Search reels…">
   </div>
 </header>
 
-<!-- HOME GRID -->
-<div class="grid" id="grid"></div>
+<!-- GRID -->
+<div id="grid" class="grid"></div>
 
-<!-- FOOTER -->
+<!-- MESSAGE -->
+<div id="notice" class="notice">
+  Loading posts…
+</div>
+
+<!-- FOOTER ALWAYS VISIBLE -->
 <footer>
-  © 2026 ReelsOTT • Powered by GitHub Pages
+  © 2026 ReelsOTT • GitHub Pages
 </footer>
 
-<!-- REELS VIEW -->
+<!-- REELS -->
 <div class="reels" id="reels">
   <div class="close" onclick="closeReels()">✕</div>
   <div id="reelWrap"></div>
 </div>
 
 <script>
-let allPosts = [];
-let filteredPosts = [];
+let allPosts=[];
 
-/* =========================
-   LOAD POSTS (AUTO)
-========================= */
+/* LOAD POSTS SAFELY (NO BLANK) */
 fetch("posts/index.json")
-.then(r => r.json())
-.then(slugs => {
+.then(r=>{
+  if(!r.ok) throw "index.json not found";
+  return r.json();
+})
+.then(slugs=>{
   return Promise.all(
     slugs.map(s =>
-      fetch("posts/" + s + ".json").then(r => r.json())
+      fetch("posts/"+s+".json").then(r=>{
+        if(!r.ok) throw s+" missing";
+        return r.json();
+      })
     )
   );
 })
-.then(data => {
-  allPosts = data;
-  filteredPosts = data;
-  render();
+.then(data=>{
+  allPosts=data;
+  render(data);
 })
-.catch(err => {
-  console.error("Post load error:", err);
+.catch(err=>{
+  document.getElementById("notice").innerText =
+    "No posts found or data error";
+  console.error(err);
 });
 
-/* =========================
-   RENDER GRID + REELS
-========================= */
-function render(){
-  const grid = document.getElementById("grid");
-  const reelWrap = document.getElementById("reelWrap");
-  grid.innerHTML = "";
-  reelWrap.innerHTML = "";
+/* RENDER */
+function render(list){
+  const grid=document.getElementById("grid");
+  const reelWrap=document.getElementById("reelWrap");
+  const notice=document.getElementById("notice");
+  grid.innerHTML="";
+  reelWrap.innerHTML="";
+  notice.style.display="none";
 
-  filteredPosts.forEach((p,i)=>{
-    grid.innerHTML += `
+  list.forEach((p,i)=>{
+    grid.innerHTML+=`
       <div class="card" onclick="openReels(${i})">
         <img src="${p.poster}">
         <h4>${p.title}</h4>
-      </div>
-    `;
-    reelWrap.innerHTML += `
+      </div>`;
+    reelWrap.innerHTML+=`
       <div class="reel">
         <video src="${p.video}" muted loop playsinline></video>
-      </div>
-    `;
+      </div>`;
   });
 }
 
-/* =========================
-   SEARCH
-========================= */
-document.getElementById("searchInput").addEventListener("input", function(){
-  const q = this.value.toLowerCase();
-  filteredPosts = allPosts.filter(p =>
-    p.title.toLowerCase().includes(q)
-  );
-  render();
-});
+/* SEARCH */
+document.getElementById("searchInput").oninput=function(){
+  const q=this.value.toLowerCase();
+  render(allPosts.filter(p=>p.title.toLowerCase().includes(q)));
+};
 
-/* =========================
-   REELS CONTROLS
-========================= */
-const reels = document.getElementById("reels");
-
+/* REELS */
+const reels=document.getElementById("reels");
 function openReels(i){
   reels.style.display="block";
-  reels.scrollTo(0, i * innerHeight);
-  playVisible();
+  reels.scrollTo(0,i*innerHeight);
 }
 function closeReels(){
   reels.style.display="none";
-  document.querySelectorAll("video").forEach(v => v.pause());
 }
-function playVisible(){
-  document.querySelectorAll(".reel").forEach(r=>{
-    const v = r.querySelector("video");
-    const b = r.getBoundingClientRect();
-    (b.top>=0 && b.bottom<=innerHeight) ? v.play() : v.pause();
-  });
-}
-reels.addEventListener("scroll", playVisible);
 </script>
 
 </body>
