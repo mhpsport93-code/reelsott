@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MovieHub</title>
+<title>Iframe Full Allow</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -14,13 +14,7 @@ html, body {
   overflow: hidden;
   background: #000;
 }
-
-#iframe-box {
-  width: 100%;
-  height: 100%;
-}
-
-#iframe-box iframe {
+iframe {
   width: 100%;
   height: 100%;
   border: none;
@@ -30,28 +24,41 @@ html, body {
 
 <body>
 
-<div id="iframe-box"></div>
-
 <script>
 (function () {
+
   const iframe = document.createElement("iframe");
 
   iframe.src = "https://moviehubplay-three.vercel.app/";
-  
-  iframe.allowFullscreen = true;
 
-  
-  iframe.setAttribute("sandbox",
-    "allow-same-origin allow-scripts allow-forms allow-popups allow-downloads allow-downloads-without-user-activation"
-  );
+  /* ❌ NO SANDBOX = MAX FREEDOM */
+  // iframe.setAttribute("sandbox", "");
 
+  /* ✅ ALL POSSIBLE ALLOW */
   iframe.setAttribute("allow",
-    "fullscreen; autoplay; encrypted-media"
+    `
+    fullscreen;
+    autoplay;
+    encrypted-media;
+    picture-in-picture;
+    web-share;
+    clipboard-read;
+    clipboard-write;
+    payment;
+    accelerometer;
+    gyroscope;
+    microphone;
+    camera;
+    geolocation
+    `
   );
 
+  iframe.allowFullscreen = true;
+  iframe.loading = "eager";
   iframe.referrerPolicy = "no-referrer-when-downgrade";
 
-  document.getElementById("iframe-box").appendChild(iframe);
+  document.body.appendChild(iframe);
+
 })();
 </script>
 
